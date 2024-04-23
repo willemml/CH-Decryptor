@@ -7,8 +7,6 @@ using System.IO.MemoryMappedFiles;
 
 using System.Runtime.CompilerServices;
 
-using System.Reflection;
-
 
 namespace Decryptor
 {
@@ -23,122 +21,15 @@ namespace Decryptor
             Logger.LogInfo("Patched encrypted song loading");
             System.IO.Directory.CreateDirectory("charts");
             Logger.LogInfo("Created dump directory");
-
-            DecryptableSong.decrypt_all();
         }
-    }
-
-    public class DecryptableSong
-    {
-        private SongEntry entry;
-        private string dump_path;
-        private static BepInEx.Logging.ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource("Decryptor");
-
-        public static void decrypt_all()
-        {
-            System.IO.Directory.CreateDirectory("charts_st");
-
-            var toDump = System.IO.Directory.GetFiles("Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs");
-            foreach (string file in toDump)
-            {
-                try
-                {
-                    var chart = new DecryptableSong(file, "charts_st");
-                    chart.dump();
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex.ToString());
-                }
-            }
-        }
-
-        private void log(string text)
-        {
-            logger.LogInfo(text);
-        }
-
-        public DecryptableSong(string path, string dump_dir)
-        {
-            log($"Loading song '{path}'...");
-            entry = new SongEntry(path);
-            log(entry.isEnc.ToString());
-            dump_path = "lol";
-            dumpData();
-            log(entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ);
-            dump_path = $"{dump_dir}/{entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ} - {entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ} ({entry.Charter.ˁʴʿˁʾʹʶʷʵʷʵ}))";
-            System.IO.Directory.CreateDirectory(dump_path);
-            log($"Song loaded, dump directory ready.");
-        }
-
-        public void dump()
-        {
-            log($"Beginning dump of '{entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ}'...");
-
-            log("  Dumping song.ini...");
-            dumpIni();
-            log("  Dumping chart...");
-            dumpChart();
-            log("  Dumping data...");
-            dumpData();
-            log("  Dumping album art...");
-            dumpAlbumArt();
-            log("  Dumping background...");
-            dumpBackgroundArt();
-
-            log($"Dump complete.");
-        }
-
-        public void dumpAlbumArt()
-        {
-            var texture = entry.songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART);
-            var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
-            System.IO.File.WriteAllBytes($"{dump_path}/album.jpg", album_jpg);
-        }
-
-        public void dumpBackgroundArt()
-        {
-            var texture = entry.songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.BACKGROUND);
-            var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
-            System.IO.File.WriteAllBytes($"{dump_path}/background.jpg", album_jpg);
-        }
-
-        public void dumpIni()
-        {
-            entry.ʷʲʿʾʷʿʽʽʷʴʷ(entry.videoBackground);
-        }
-
-        public void dumpChart()
-        {
-            System.IO.File.WriteAllBytes($"{dump_path}/{entry.chartName}", entry.songEnc.ʶˁʾʲʹʳʸʻʽʶʺ);
-        }
-
-        private static byte[] ReadMMFAllBytes(ref MemoryMappedFile mmf)
-        {
-            using (var stream = mmf.CreateViewStream())
-            {
-                using (BinaryReader binReader = new BinaryReader(stream))
-                {
-                    return binReader.ReadBytes((int)stream.Length);
-                }
-            }
-        }
-
-        public void dumpData()
-        {
-            var bytes = ReadMMFAllBytes(ref entry.songEnc.ʻʵʳʸʴʺˁˀʵʿʴ);
-            System.IO.File.WriteAllBytes($"{dump_path}/dumped", bytes);
-        }
-
     }
 }
 
-
 class Patches
 {
-    //[HarmonyPatch(typeof(SongEntry), "iniPath", MethodType.Getter)]
-    //[HarmonyWrapSafe]
-    //[HarmonyPostfix]
+    [HarmonyPatch(typeof(SongEntry), "iniPath", MethodType.Getter)]
+    [HarmonyWrapSafe]
+    [HarmonyPostfix]
     static void iniPath(ref SongEntry __instance, ref string __result)
     {
         var entry = __instance;
@@ -153,12 +44,11 @@ class Patches
         __result = $"{dump_dir}/song.ini";
     }
 
-    //[HarmonyPatch(typeof(SongEntry), "ˁʿʹʶʽʲʺʻˁʼʸ")]
-    //[HarmonyWrapSafe]
-    //[HarmonyPostfix]
+    [HarmonyPatch(typeof(SongEntry), "ˁʿʹʶʽʲʺʻˁʼʸ")]
+    [HarmonyWrapSafe]
+    [HarmonyPostfix]
     static void songLoaded(ref SongEntry __instance)
     {
-        
         var logger = BepInEx.Logging.Logger.CreateLogSource("Decryptor");
         var entry = __instance;
         var name = entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ;
@@ -189,14 +79,6 @@ class Patches
         //var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(a_texture);
         //System.IO.File.WriteAllBytes($"{dump_dir}/album.jpg", album_jpg);
 
-        /* logger.LogInfo("  Recreating EncryptedSong");
-         var songEnc = new ʺʻʻˁˀʹʿʲʻʴʿ($"Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs/{name}.srb");
-         var texture = songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART);
-         var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
-         System.IO.File.WriteAllBytes($"{dump_dir}/album.jpg", album_jpg);
- */
-
-
         logger.LogInfo($"  Dumping file");
         var file = MemoryMappedFile.CreateFromFile(File.OpenRead($"Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs/{name}.srb"), null, 0L, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen: false);
         using MemoryMappedViewAccessor memoryMappedViewAccessor = file.CreateViewAccessor(0L, 0L, MemoryMappedFileAccess.Read);
@@ -204,7 +86,6 @@ class Patches
         ulong ʹʼʼˀʷʽʵʹʶʶʼ = ˁʾʴʳʴʿʸˁʶʼʾ.ʾʴʻʻˁʽʻʲʶʼʾ(memoryMappedViewAccessor.ReadUInt64(num));
         num += Unsafe.SizeOf<ulong>();
         ulong num2 = ˀʴʽʾʸʻʻˁʶʺʶ.ʷʹʴʳʾʹʳʼˁʴʵ(memoryMappedViewAccessor.ReadUInt64(num), ʹʼʼˀʷʽʵʹʶʶʼ);
-        logger.LogInfo($"  num2 = {num2}");
         num += Unsafe.SizeOf<ulong>();
         var ʿˀʺʷʼʾʳˀʹʳˁ = new ʽʼʲʴʲˀʸʻʸʲʹ();
         byte[] array = new byte[num2];
@@ -216,9 +97,7 @@ class Patches
         {
             ʿˀʺʷʼʾʳˀʹʳˁ.ʼˀʸʳʵˁʵʽˀʿʴ(array, ref ʻʴʲʳʴʽʹʸʵʸʼ);
             long num3 = array.weirdM2(ref ʻʴʲʳʴʽʹʸʵʸʼ);
-            logger.LogInfo($"  num3 = {num3}");
             int num4 = array.weirdM4(ref ʻʴʲʳʴʽʹʸʵʸʼ);
-            logger.LogInfo($"  num4 = {num4}");
             var ʹʹʻˁʽʻʹʼʹʹʷ = (ʼˀʼʼʽʳˀʶʺʵˀ)array.weirdM5(ref ʻʴʲʳʴʽʹʸʵʸʼ);
             var ʽʶʵˁʼʲʳʲʴʻʳ = array.weirdM4(ref ʻʴʲʳʴʽʹʸʵʸʼ);
 
@@ -236,12 +115,12 @@ class Patches
             var ʾʵʻʾʶʼʸʻʳʺʾ = new ulong[ʽʶʵˁʼʲʳʲʴʻʳ];
             if (ʽʶʵˁʼʲʳʲʴʻʳ > 0)
             {
-                array.weirdM6(ref ʻʴʲʳʴʽʹʸʵʸʼ, ʾʵʻʾʶʼʸʻʳʺʾ, (uint)ʽʶʵˁʼʲʳʲʴʻʳ);
+                array.ʽʹʵʾʺʷʾʸˀʾʻ(ref ʻʴʲʳʴʽʹʸʵʸʼ, ʾʵʻʾʶʼʸʻʳʺʾ, (uint)ʽʶʵˁʼʲʳʲʴʻʳ);
             }
             var ʵʼʺˁʹʵʽʻʳʽʽ = new ulong[num4];
-            array.weirdM6(ref ʻʴʲʳʴʽʹʸʵʸʼ, ʵʼʺˁʹʵʽʻʳʽʽ, (uint)num4);
+            array.ʽʹʵʾʺʷʾʸˀʾʻ(ref ʻʴʲʳʴʽʹʸʵʸʼ, ʵʼʺˁʹʵʽʻʳʽʽ, (uint)num4);
             var ʴˁʾʻʴʳʻʷʾʿʹ = new ulong[num4];
-            array.weirdM6(ref ʻʴʲʳʴʽʹʸʵʸʼ, ʴˁʾʻʴʳʻʷʾʿʹ, (uint)num4);
+            array.ʽʹʵʾʺʷʾʸˀʾʻ(ref ʻʴʲʳʴʽʹʸʵʸʼ, ʴˁʾʻʴʳʻʷʾʿʹ, (uint)num4);
             var ʶˁʾʲʹʳʸʻʽʶʺ = new byte[num3];
             data.ʿʷʽʻʸʾʲʼʾʲʼ(memoryMappedViewAccessor, ʶˁʾʲʹʳʸʻʽʶʺ, (uint)num3, ref num);
             ʶˁʾʲʹʳʸʻʽʶʺ = ʲʲʹʻʿʳʿʻʼʴʾ.ʺʼʳʵʻʺʻʿʹʵʻ(ʶˁʾʲʹʳʸʻʽʶʺ);
@@ -254,14 +133,12 @@ class Patches
             for (int j = 0; j < num4; j++)
             {
                 ulong num5 = ʴˁʾʻʴʳʻʷʾʿʹ[j];
-                logger.LogInfo($"  num5 = {num5}");
                 checked
                 {
                     ʾˀʵʿʴʶʾʼʲˁˀ[j] = new ʿʳʶʳʾˀʺʸʹʳʽ(file, num, (long)num5);
                     num += (long)num5;
                 }
             }
-            logger.LogInfo("  block!");
         }
 
 
@@ -581,58 +458,58 @@ public static class WeirdM5
 
 public static class WeirdM6
 {
-    public unsafe static int weirdM6<T>(this byte[] ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        int num = Unsafe.SizeOf<T>() * (int)ʶˀʿʷʴʻʶˁʶʿʿ;
-        byte* source = (byte*)Unsafe.AsPointer(ref ˀʳʹʷʵˀʲʿʽʺʹ[0]);
-        Unsafe.CopyBlockUnaligned(ref Unsafe.AsRef<byte>(source), ref ʳʼʾʺˀʽʿʳʹʷʽ[ʻʴʲʳʴʽʹʸʵʸʼ], (uint)num);
-        return num;
-    }
-
-    public unsafe static int weirdM6<T>(this ReadOnlySpan<byte> ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        fixed (byte* ʳʼʾʺˀʽʿʳʹʷʽ2 = ʳʼʾʺˀʽʿʳʹʷʽ)
-        {
-            return weirdM6(ʳʼʾʺˀʽʿʳʹʷʽ2, ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+       public unsafe static int ʽʹʵʾʺʷʾʸˀʾʻ<T>(this byte[] ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		int num = Unsafe.SizeOf<T>() * (int)ʶˀʿʷʴʻʶˁʶʿʿ;
+		byte* source = (byte*)Unsafe.AsPointer(ref ˀʳʹʷʵˀʲʿʽʺʹ[0]);
+		Unsafe.CopyBlockUnaligned(ref Unsafe.AsRef<byte>(source), ref ʳʼʾʺˀʽʿʳʹʷʽ[ʻʴʲʳʴʽʹʸʵʸʼ], (uint)num);
+		return num;
         }
-    }
 
-    public static void weirdM6<T>(this ReadOnlySpan<byte> ʳʼʾʺˀʽʿʳʹʷʽ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        ʻʴʲʳʴʽʹʸʵʸʼ += ʳʼʾʺˀʽʿʳʹʷʽ.weirdM6(ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
-    }
-
-
-    public static void weirdM6<T>(this byte[] ʽʽʿʿʾʲʵʽʼʷˀ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        ʻʴʲʳʴʽʹʸʵʸʼ += ʽʽʿʿʾʲʵʽʼʷˀ.weirdM6(ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
-    }
-
-
-    public unsafe static int weirdM6<T>(this Span<byte> ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        fixed (byte* ʳʼʾʺˀʽʿʳʹʷʽ2 = ʳʼʾʺˀʽʿʳʹʷʽ)
-        {
-            return weirdM6(ʳʼʾʺˀʽʿʳʹʷʽ2, ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+	public unsafe static int ʽʹʵʾʺʷʾʸˀʾʻ<T>(this ReadOnlySpan<byte> ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		fixed (byte* ʳʼʾʺˀʽʿʳʹʷʽ2 = ʳʼʾʺˀʽʿʳʹʷʽ)
+		{
+			return ʽʹʵʾʺʷʾʸˀʾʻ(ʳʼʾʺˀʽʿʳʹʷʽ2, ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+		}
         }
-    }
 
-    public static void weirdM6<T>(this Span<byte> ʳʼʾʺˀʽʿʳʹʷʽ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        ʻʴʲʳʴʽʹʸʵʸʼ += ʳʼʾʺˀʽʿʳʹʷʽ.weirdM6(ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
-    }
+	public static void ʽʹʵʾʺʷʾʸˀʾʻ<T>(this ReadOnlySpan<byte> ʳʼʾʺˀʽʿʳʹʷʽ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		ʻʴʲʳʴʽʹʸʵʸʼ += ʳʼʾʺˀʽʿʳʹʷʽ.ʽʹʵʾʺʷʾʸˀʾʻ(ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+	}
 
 
-    public unsafe static int weirdM6<T>(byte* ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        uint num = (uint)Unsafe.SizeOf<T>() * ʶˀʿʷʴʻʶˁʶʿʿ;
-        byte* source = (byte*)Unsafe.AsPointer(ref ˀʳʹʷʵˀʲʿʽʺʹ[0]);
-        Unsafe.CopyBlockUnaligned(ref Unsafe.AsRef<byte>(source), ref ʳʼʾʺˀʽʿʳʹʷʽ[ʻʴʲʳʴʽʹʸʵʸʼ], num);
-        return (int)num;
-    }
+	public static void ʽʹʵʾʺʷʾʸˀʾʻ<T>(this byte[] ʽʽʿʿʾʲʵʽʼʷˀ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		ʻʴʲʳʴʽʹʸʵʸʼ += ʽʽʿʿʾʲʵʽʼʷˀ.ʽʹʵʾʺʷʾʸˀʾʻ(ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+	}
 
-    public unsafe static void weirdM6<T>(byte* ʳʼʾʺˀʽʿʳʹʷʽ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
-    {
-        ʻʴʲʳʴʽʹʸʵʸʼ += weirdM6(ʳʼʾʺˀʽʿʳʹʷʽ, ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
-    }
+
+	public unsafe static int ʽʹʵʾʺʷʾʸˀʾʻ<T>(this Span<byte> ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		fixed (byte* ʳʼʾʺˀʽʿʳʹʷʽ2 = ʳʼʾʺˀʽʿʳʹʷʽ)
+		{
+			return ʽʹʵʾʺʷʾʸˀʾʻ(ʳʼʾʺˀʽʿʳʹʷʽ2, ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+		}
+        }
+
+	public static void ʽʹʵʾʺʷʾʸˀʾʻ<T>(this Span<byte> ʳʼʾʺˀʽʿʳʹʷʽ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		ʻʴʲʳʴʽʹʸʵʸʼ += ʳʼʾʺˀʽʿʳʹʷʽ.ʽʹʵʾʺʷʾʸˀʾʻ(ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+	}
+
+
+	public unsafe static int ʽʹʵʾʺʷʾʸˀʾʻ<T>(byte* ʳʼʾʺˀʽʿʳʹʷʽ, int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		uint num = (uint)Unsafe.SizeOf<T>() * ʶˀʿʷʴʻʶˁʶʿʿ;
+		byte* source = (byte*)Unsafe.AsPointer(ref ˀʳʹʷʵˀʲʿʽʺʹ[0]);
+		Unsafe.CopyBlockUnaligned(ref Unsafe.AsRef<byte>(source), ref ʳʼʾʺˀʽʿʳʹʷʽ[ʻʴʲʳʴʽʹʸʵʸʼ], num);
+		return (int)num;
+        }
+
+	public unsafe static void ʽʹʵʾʺʷʾʸˀʾʻ<T>(byte* ʳʼʾʺˀʽʿʳʹʷʽ, ref int ʻʴʲʳʴʽʹʸʵʸʼ, T[] ˀʳʹʷʵˀʲʿʽʺʹ, uint ʶˀʿʷʴʻʶˁʶʿʿ) where T : unmanaged
+	{
+		ʻʴʲʳʴʽʹʸʵʸʼ += ʽʹʵʾʺʷʾʸˀʾʻ(ʳʼʾʺˀʽʿʳʹʷʽ, ʻʴʲʳʴʽʹʸʵʸʼ, ˀʳʹʷʵˀʲʿʽʺʹ, ʶˀʿʷʴʻʶˁʶʿʿ);
+	}
 }
