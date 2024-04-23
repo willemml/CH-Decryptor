@@ -3,6 +3,7 @@ using HarmonyLib;
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.IO.MemoryMappedFiles;
 
 using System.Reflection.Emit;
@@ -16,12 +17,7 @@ namespace Decryptor
     {
         private void Awake()
         {
-            // Plugin startup logic
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
-            Harmony.CreateAndPatchAll(typeof(SongEntryWriteIniPatch));
-            Logger.LogInfo("Patched encrypted song loading");
-            System.IO.Directory.CreateDirectory("charts");
-            Logger.LogInfo("Created dump directory");
 
             DecryptableSong.decrypt_all();
         }
@@ -30,16 +26,13 @@ namespace Decryptor
     public class DecryptableSong
     {
         private SongEntry entry;
+        private string source_path;
         private string dump_path;
         private static BepInEx.Logging.ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource("Decryptor");
 
         public static void decrypt_all()
         {
             System.IO.Directory.CreateDirectory("charts_st");
-
-			//(new GlobalVariables()).Awake();
-
-			//GlobalVariables.ʷʲʺʷʻʳʾʶˁˀʷ.ʸʲʹʴʲʷʴʳʹʶʿ = new ʵʴʺˁʵʽʾʹʸʹˀ();
 
             var toDump = System.IO.Directory.GetFiles("Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs");
             foreach (string file in toDump)
@@ -56,7 +49,7 @@ namespace Decryptor
             }
         }
 
-        private void log(string text)
+        public static void log(string text)
         {
             logger.LogInfo(text);
         }
@@ -64,9 +57,9 @@ namespace Decryptor
         public DecryptableSong(string path, string dump_dir)
         {
             log($"Loading song '{path}'...");
+            source_path = path;
             entry = new SongEntry(path);
-			entry.ʹʼˁʼʸʵʽʾʵʴʽ();
-			//GlobalVariables.ʷʲʺʷʻʳʾʶˁˀʷ.ʸʲʹʴʲʷʴʳʹʶʿ.ˁʽʳʹʾʹʺʳʳʿˀ(entry);
+            entry.ʹʼˁʼʸʵʽʾʵʴʽ();
             dump_path = $"{dump_dir}/{entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ} - {entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ}";
             System.IO.Directory.CreateDirectory(dump_path);
             log($"Song loaded, dump directory ready.");
@@ -84,10 +77,10 @@ namespace Decryptor
             dumpBackgroundArt();
             log("  Dumping song.ini...");
             dumpIni();
-            //log("  Dumping data...");
-            //dumpData();
+            log("  Dumping tracks...");
+            dumpTracks();
 
-            log($"Dump complete.");
+            log($"  Dump complete.");
         }
 
         public void dumpAlbumArt()
@@ -106,7 +99,7 @@ namespace Decryptor
 
         public void dumpIni()
         {
-			entry.folderPath = $"{dump_path}/song.ini";
+            entry.folderPath = $"{dump_path}/song.ini";
             entry.ʷʲʿʾʷʿʽʽʷʴʷ(false);
         }
 
@@ -115,108 +108,40 @@ namespace Decryptor
             System.IO.File.WriteAllBytes($"{dump_path}/{entry.chartName}", entry.songEnc.ʶˁʾʲʹʳʸʻʽʶʺ);
         }
 
-        private static byte[] ReadMMFAllBytes(ref MemoryMappedFile mmf)
+        private static byte[] ReadMMFAllBytes(ref MemoryMappedFile mmf, long offset, long size)
         {
-            using (var stream = mmf.CreateViewStream())
+            using MemoryMappedViewStream stream = mmf.CreateViewStream(offset, size, MemoryMappedFileAccess.Read);
+            MemoryStream memoryStream = new MemoryStream();
+            using (DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Compress))
             {
-                using (BinaryReader binReader = new BinaryReader(stream))
-                {
-                    return binReader.ReadBytes((int)stream.Length);
-                }
+                deflateStream.CopyTo(memoryStream);
+            }
+
+            using (BinaryReader binReader = new BinaryReader(memoryStream))
+            {
+                return binReader.ReadBytes((int)size);
             }
         }
 
-        public void dumpData()
+        private static void dumpTrack(MemoryMappedViewAccessor stream, int length, string path)
         {
-            var bytes = ReadMMFAllBytes(ref entry.songEnc.ʻʵʳʸʴʺˁˀʵʿʴ);
-            System.IO.File.WriteAllBytes($"{dump_path}/dumped", bytes);
+            var bytes = new byte[length];
+            stream.ReadArray<byte>(0, bytes, 0, length);
+
+            System.IO.File.WriteAllBytes(path, bytes);
+
+        }
+
+        public void dumpTracks()
+        {
+            var track_lengths = entry.songEnc.ʴˁʾʻʴʳʻʷʾʿʹ;
+
+            for (int i = 0; i < track_lengths.Length; i++)
+            {
+                log($"    Dumping track {i}...");
+                dumpTrack(((ʿʳʶʳʾˀʺʸʹʳʽ)entry.songEnc.ʾˀʵʿʴʶʾʼʲˁˀ[0]).ʻʶʳʶʲʾʿʹˀˁʻ, (int)track_lengths[i], $"{dump_path}/track{i.ToString()}");
+            }
         }
 
     }
-}
-
-
-class Patches
-{
-    //[HarmonyPatch(typeof(SongEntry), "iniPath", MethodType.Getter)]
-    //[HarmonyWrapSafe]
-    //[HarmonyPostfix]
-    static void iniPath(ref SongEntry __instance, ref string __result)
-    {
-        var entry = __instance;
-        var name = entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ;
-        var artist = entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ;
-        var charter = entry.Charter.ˁʴʿˁʾʹʶʷʵʷʵ;
-        var data = entry.songEnc;
-        var chart = data.ʶˁʾʲʹʳʸʻʽʶʺ;
-
-        var dump_dir = $"charts/{name}";
-
-        __result = $"{dump_dir}/song.ini";
-    }
-
-    //[HarmonyPatch(typeof(SongEntry), "ˁʿʹʶʽʲʺʻˁʼʸ")]
-    //[HarmonyWrapSafe]
-    //[HarmonyPostfix]
-    static void songLoaded(ref SongEntry __instance)
-    {
-        
-        var logger = BepInEx.Logging.Logger.CreateLogSource("Decryptor");
-        var entry = __instance;
-        var name = entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ;
-        var artist = entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ;
-        var charter = entry.Charter.ˁʴʿˁʾʹʶʷʵʷʵ;
-        var data = entry.songEnc;
-        var chart = data.ʶˁʾʲʹʳʸʻʽʶʺ;
-
-        var dump_dir = $"charts/{name}";
-        System.IO.Directory.CreateDirectory(dump_dir);
-
-
-        logger.LogInfo($"Loaded encrypted song '{name}'");
-        logger.LogInfo($"  Dumping chart data to {dump_dir}");
-
-        logger.LogInfo($"  Writing metadata to ini file");
-        entry.ʷʲʿʾʷʿʽʽʷʴʷ(false);
-
-        logger.LogInfo($"  Dumping chart MIDI data");
-        System.IO.File.WriteAllBytes($"{dump_dir}/notes.mid", chart);
-
-        //var has_art = data.ʴʲʼʹʴʶʷʾʺʴʹ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART);
-        //logger.LogInfo($"  Dumping album art ({has_art})");
-        //var a_texture = new Texture2D(512, 512, GraphicsFormat.R8G8B8A8_SRGB, TextureCreationFlags.None);
-        //a_texture.wrapMode = TextureWrapMode.Clamp;
-        //NativeArray<Color32> nativeTextureData = a_texture.GetRawTextureData<Color32>();
-        //data.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART, nativeTextureData, 512, 512);
-        //var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(a_texture);
-        //System.IO.File.WriteAllBytes($"{dump_dir}/album.jpg", album_jpg);
-
-        /* logger.LogInfo("  Recreating EncryptedSong");
-         var songEnc = new ʺʻʻˁˀʹʿʲʻʴʿ($"Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs/{name}.srb");
-         var texture = songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART);
-         var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
-         System.IO.File.WriteAllBytes($"{dump_dir}/album.jpg", album_jpg);
- */
-
-   
-        logger.LogInfo($"  Chart fully decrypted/dumped");
-    }
-
-}
-
-[HarmonyPatch(typeof(SongEntry))]
-[HarmonyPatch("ʷʲʿʾʷʿʽʽʷʴʷ")]
-public static class SongEntryWriteIniPatch {
-	static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-	{
-		var codes = new List<CodeInstruction>(instructions);
-		for (int i = 0; i < codes.Count; i++)
-		{
-			if (i >= 0x02a2 && i <= 0x02bc)
-			{
-			codes[i].opcode = OpCodes.Nop;
-			}
-			}
-		return codes;
-	}
 }
