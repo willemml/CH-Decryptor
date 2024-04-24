@@ -1,4 +1,7 @@
 /lib
 /bin
 /obj
+/charts
+/songs
+*.dll
 .DS_Store

@@ -1,14 +1,9 @@
 ﻿using BepInEx;
-using HarmonyLib;
 
 using System;
-using System.IO;
-using System.IO.Compression;
 using System.IO.MemoryMappedFiles;
 
-using System.Reflection.Emit;
-
-using System.Collections.Generic;
+#pragma warning disable 0168
 
 namespace Decryptor
 {
@@ -39,8 +34,12 @@ namespace Decryptor
             {
                 try
                 {
+                    try {
                     var chart = new DecryptableSong(file, "charts_st");
                     chart.dump();
+                    } catch (System.NullReferenceException e) {
+                        continue;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -57,12 +56,20 @@ namespace Decryptor
         public DecryptableSong(string path, string dump_dir)
         {
             log($"Loading song '{path}'...");
-            source_path = path;
-            entry = new SongEntry(path);
-            entry.ʹʼˁʼʸʵʽʾʵʴʽ();
-            dump_path = $"{dump_dir}/{entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ} - {entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ}";
-            System.IO.Directory.CreateDirectory(dump_path);
-            log($"Song loaded, dump directory ready.");
+
+            try
+            {
+                source_path = path;
+                entry = new SongEntry(path);
+                entry.ʹʼˁʼʸʵʽʾʵʴʽ();
+                dump_path = $"{dump_dir}/{entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ} - {entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ}";
+                System.IO.Directory.CreateDirectory(dump_path);
+                log($"Song loaded, dump directory ready.");
+            }
+            catch (Exception e)
+            {
+                log("Loading song failed.");
+            }
         }
 
         public void dump()
@@ -85,51 +92,70 @@ namespace Decryptor
 
         public void dumpAlbumArt()
         {
-            var texture = entry.songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART);
-            var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
-            System.IO.File.WriteAllBytes($"{dump_path}/album.jpg", album_jpg);
+            try
+            {
+                var texture = entry.songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.ALBUM_ART);
+                var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
+                System.IO.File.WriteAllBytes($"{dump_path}/album.jpg", album_jpg);
+            }
+            catch (Exception e)
+            {
+                log("  Dumping album art failed.");
+            }
         }
 
         public void dumpBackgroundArt()
         {
-            var texture = entry.songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.BACKGROUND);
-            var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
-            System.IO.File.WriteAllBytes($"{dump_path}/background.jpg", album_jpg);
+            try
+            {
+                var texture = entry.songEnc.ʵʼʴˀʾˀʼʿʲʶʴ(ʼˀʼʼʽʳˀʶʺʵˀ.BACKGROUND);
+                var album_jpg = UnityEngine.ImageConversion.EncodeToJPG(texture);
+                System.IO.File.WriteAllBytes($"{dump_path}/background.jpg", album_jpg);
+            }
+            catch (Exception e)
+            {
+                log("  Dumping background failed.");
+            }
         }
 
         public void dumpIni()
         {
-            entry.folderPath = $"{dump_path}/song.ini";
-            entry.ʷʲʿʾʷʿʽʽʷʴʷ(false);
+            try
+            {
+                entry.folderPath = $"{dump_path}/song.ini";
+                entry.ʷʲʿʾʷʿʽʽʷʴʷ(false);
+            }
+            catch (Exception e)
+            {
+                log("  Dumping song.ini failed.");
+            }
         }
 
         public void dumpChart()
         {
-            System.IO.File.WriteAllBytes($"{dump_path}/{entry.chartName}", entry.songEnc.ʶˁʾʲʹʳʸʻʽʶʺ);
-        }
-
-        private static byte[] ReadMMFAllBytes(ref MemoryMappedFile mmf, long offset, long size)
-        {
-            using MemoryMappedViewStream stream = mmf.CreateViewStream(offset, size, MemoryMappedFileAccess.Read);
-            MemoryStream memoryStream = new MemoryStream();
-            using (DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Compress))
+            try
             {
-                deflateStream.CopyTo(memoryStream);
+                System.IO.File.WriteAllBytes($"{dump_path}/{entry.chartName}", entry.songEnc.ʶˁʾʲʹʳʸʻʽʶʺ);
             }
-
-            using (BinaryReader binReader = new BinaryReader(memoryStream))
+            catch (Exception e)
             {
-                return binReader.ReadBytes((int)size);
+                log($"  Dumping {entry.chartName} faild.");
             }
         }
 
         private static void dumpTrack(MemoryMappedViewAccessor stream, int length, string path)
         {
-            var bytes = new byte[length];
-            stream.ReadArray<byte>(0, bytes, 0, length);
+            try
+            {
+                var bytes = new byte[length];
+                stream.ReadArray<byte>(0, bytes, 0, length);
 
-            System.IO.File.WriteAllBytes(path, bytes);
-
+                System.IO.File.WriteAllBytes(path, bytes);
+            }
+            catch (Exception e)
+            {
+                log($"    Failed.");
+            }
         }
 
         public void dumpTracks()
@@ -142,6 +168,5 @@ namespace Decryptor
                 dumpTrack(((ʿʳʶʳʾˀʺʸʹʳʽ)entry.songEnc.ʾˀʵʿʴʶʾʼʲˁˀ[0]).ʻʶʳʶʲʾʿʹˀˁʻ, (int)track_lengths[i], $"{dump_path}/track{i.ToString()}");
             }
         }
-
     }
 }
