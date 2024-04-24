@@ -1,6 +1,10 @@
 ﻿using BepInEx;
 
+using System.Runtime.InteropServices;
+
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
 
 #pragma warning disable 0168
@@ -23,6 +27,8 @@ namespace Decryptor
         private SongEntry entry;
         private string source_path;
         private string dump_path;
+        private static string[] track_names = BassAudioManager.ʷʼˁˀʾʸʴʳʺʵˁ;
+
         private static BepInEx.Logging.ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource("Decryptor");
 
         public static void decrypt_all()
@@ -34,10 +40,13 @@ namespace Decryptor
             {
                 try
                 {
-                    try {
-                    var chart = new DecryptableSong(file, "charts_st");
-                    chart.dump();
-                    } catch (System.NullReferenceException e) {
+                    try
+                    {
+                        var chart = new DecryptableSong(file, "charts_st");
+                        chart.dump();
+                    }
+                    catch (System.NullReferenceException e)
+                    {
                         continue;
                     }
                 }
@@ -142,30 +151,36 @@ namespace Decryptor
                 log($"  Dumping {entry.chartName} faild.");
             }
         }
-
-        private static void dumpTrack(MemoryMappedViewAccessor stream, int length, string path)
-        {
-            try
-            {
-                var bytes = new byte[length];
-                stream.ReadArray<byte>(0, bytes, 0, length);
-
-                System.IO.File.WriteAllBytes(path, bytes);
-            }
-            catch (Exception e)
-            {
-                log($"    Failed.");
-            }
-        }
-
         public void dumpTracks()
         {
-            var track_lengths = entry.songEnc.ʴˁʾʻʴʳʻʷʾʿʹ;
+            var track_lengths = new int[14];
+            var track_streams = new ʳˁʿʶʵʺʻʺʿʽʴ[14];
 
-            for (int i = 0; i < track_lengths.Length; i++)
+            IEnumerable<Tuple<ʳˁʿʶʵʺʻʺʿʽʴ, ulong>> encrypted_streams = entry.songEnc.ʾˀʵʿʴʶʾʼʲˁˀ.Zip(entry.songEnc.ʴˁʾʻʴʳʻʷʾʿʹ, Tuple.Create);
+
+            foreach ((ʳˁʿʶʵʺʻʺʿʽʴ track_stream, ulong length) in encrypted_streams)
             {
-                log($"    Dumping track {i}...");
-                dumpTrack(((ʿʳʶʳʾˀʺʸʹʳʽ)entry.songEnc.ʾˀʵʿʴʶʾʼʲˁˀ[0]).ʻʶʳʶʲʾʿʹˀˁʻ, (int)track_lengths[i], $"{dump_path}/track{i.ToString()}");
+                var index = track_stream.ʾʷʽʼʴˁˁʹʳʴʴ;
+                track_lengths[index] = (int)length;
+
+                track_stream.ʾʴʵʵʴʿʾʷʴʲˀ();
+                track_streams[index] = track_stream;
+            }
+
+
+            for (int i = 0; i < track_streams.Length; i++)
+            {
+                if (track_streams[i] != null)
+                {
+                    log($"    Dumping track '{track_names[i]}'...");
+                    var bytes = new byte[track_lengths[i]];
+                    unsafe
+                    {
+                        fixed (byte* ptr = &bytes[0])
+                        ((ʿʳʶʳʾˀʺʸʹʳʽ)track_streams[i]).ʺʳˀʾʴʵʷʶʼʶʹ(ptr, bytes.Length);
+                    }
+                    System.IO.File.WriteAllBytes($"{dump_path}/{track_names[i]}.opus", bytes);
+                }
             }
         }
     }
