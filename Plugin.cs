@@ -33,7 +33,7 @@ namespace Decryptor
 
         public static void decrypt_all()
         {
-            System.IO.Directory.CreateDirectory("charts_st");
+            System.IO.Directory.CreateDirectory("charts");
 
             var toDump = System.IO.Directory.GetFiles("Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs");
             foreach (string file in toDump)
@@ -42,7 +42,7 @@ namespace Decryptor
                 {
                     try
                     {
-                        var chart = new DecryptableSong(file, "charts_st");
+                        var chart = new DecryptableSong(file, "charts");
                         chart.dump();
                     }
                     catch (System.NullReferenceException e)
