@@ -1,11 +1,8 @@
 ﻿using BepInEx;
 
-using System.Runtime.InteropServices;
-
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.IO.MemoryMappedFiles;
 
 #pragma warning disable 0168
 
@@ -35,7 +32,7 @@ namespace Decryptor
         {
             System.IO.Directory.CreateDirectory("charts");
 
-            var toDump = System.IO.Directory.GetFiles("Clone Hero.app/Contents/Resources/Data/StreamingAssets/songs");
+            var toDump = System.IO.Directory.GetFiles("songs");
             foreach (string file in toDump)
             {
                 try
