@@ -68,7 +68,7 @@ namespace Decryptor
                 source_path = path;
                 entry = new SongEntry(path);
                 entry.ʹʼˁʼʸʵʽʾʵʴʽ();
-                dump_path = $"{dump_dir}/{entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ} - {entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ}";
+                dump_path = $"{dump_dir}/{entry.Artist.ˁʴʿˁʾʹʶʷʵʷʵ} - {entry.Name.ˁʴʿˁʾʹʶʷʵʷʵ}";
                 System.IO.Directory.CreateDirectory(dump_path);
                 log($"Song loaded, dump directory ready.");
             }
