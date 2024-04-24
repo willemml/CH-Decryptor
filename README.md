@@ -6,7 +6,8 @@ Requires [installing BepInEx](https://docs.bepinex.dev/articles/user_guide/insta
 
 ## Usage
 
-Clone Hero uses stripped DLLs, to fix this, follow [this guide](https://hackmd.io/@ghorsington/rJuLdZTzK).
+Clone Hero uses stripped DLLs, to fix this, follow [this guide](https://hackmd.io/@ghorsington/rJuLdZTzK)
+(unless you are on Windows, in which case, keep reading).
 Clone Hero uses Unity version 2022.3.11, download [mscorlibs here](https://unity.bepinex.dev/corlibs/2022.3.11.zip),
 and [UnityEngine here](https://unity.bepinex.dev/libraries/2022.3.11.zip). BepInEx (and therefore this program)
 will not work without replacing the DLLs with their unstripped counterparts.
@@ -15,13 +16,20 @@ Standard (which is what those files are for). Instead you will have to install U
 dummy project, build it, and then copy the files from the `DummyGame_Data/Managed` directory to the
 `Clone Hero_Data/Managed` directory (replacing all files).
 
+**NOTE:** on Windows Clone Hero cannot be installed in `C:\Program Files`, this program will not work if that is
+the case. This is probably caused by Windows security settings. Moving the Clone Hero game directory somewhere else
+(your desktop for example) should avoid this issue.
+
+After doing all this, run the game once (it will likely crash, but thats ok). This will generate the BepInEx
+folder tree and config file.
+
 You will also need to set `HideManagerGameObject = true` in BepInEx's config file (`BepInEx/config/BepInEx.cfg`).
 
 Once BepInEx is installed, install my patcher plugin ([CH-Patcher](https://github.com/willemml/CH-Patcher)). 
 Then drop `Decryptor.dll` (which you can get from the GitHub releases) into the BepInEx plugins folder.
 
-Finally, grab the `Clone Hero_Data/StreamingAssets/songs` (on Windows this is in the game directory, on macOS
-it is in `Clone Hero.app/Contents/Resources`), and put it in the same directory as `./run_bepinex.sh` (mac, linux)
+Finally, grab the `Clone Hero_Data/StreamingAssets/songs` folder (on Windows this is in the game directory, on macOS
+it is in `Clone Hero.app/Contents/Resources`), and put it (the entire folder, with its contents) in the same directory as `./run_bepinex.sh` (mac, linux)
 or `Clone Hero.exe` (Windows).
 
 Then, open the game. It should exit after a couple seconds and the dumped charts will be located in

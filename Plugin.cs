@@ -75,6 +75,7 @@ namespace Decryptor
             catch (Exception e)
             {
                 log("Loading song failed.");
+                log(e.ToString());
             }
         }
 
