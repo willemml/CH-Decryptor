@@ -6,6 +6,11 @@ Requires [installing BepInEx](https://docs.bepinex.dev/articles/user_guide/insta
 
 ## Usage
 
+Clone Hero uses stripped DLLs, to fix this, follow [this guide](https://hackmd.io/@ghorsington/rJuLdZTzK).
+Clone Hero uses Unity version 2022.3.11, download [mscorlibs here](https://unity.bepinex.dev/corlibs/2022.3.11.zip),
+and [UnityEngine here](https://unity.bepinex.dev/libraries/2022.3.11.zip). BepInEx (and therefore this program)
+will not work without replacing the DLLs with their unstripped counterparts.
+
 Once BepInEx is installed, install my patcher plugin ([CH-Patcher](https://github.com/willemml/CH-Patcher)). 
 Then drop `Decryptor.dll` (which you can get from the GitHub releases) into the BepInEx plugins folder.
 
