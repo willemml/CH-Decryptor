@@ -89,10 +89,10 @@ namespace Decryptor
             dumpAlbumArt();
             log("  Dumping background...");
             dumpBackgroundArt();
-            log("  Dumping song.ini...");
-            dumpIni();
             log("  Dumping tracks...");
             dumpTracks();
+            log("  Dumping song.ini...");
+            dumpIni();
 
             log($"  Dump complete.");
         }
@@ -107,7 +107,7 @@ namespace Decryptor
             }
             catch (Exception e)
             {
-                log("  Dumping album art failed.");
+                log("    Dumping album art failed.");
             }
         }
 
@@ -121,7 +121,8 @@ namespace Decryptor
             }
             catch (Exception e)
             {
-                log("  Dumping background failed.");
+                log("    Dumping background failed.");
+                log(e.ToString());
             }
         }
 
@@ -129,12 +130,17 @@ namespace Decryptor
         {
             try
             {
+                if (entry.songLength <= 0) {
+                    entry.songLength = 1;
+                }
                 entry.folderPath = $"{dump_path}/song.ini";
                 entry.ʷʲʿʾʷʿʽʽʷʴʷ(false);
             }
             catch (Exception e)
             {
-                log("  Dumping song.ini failed.");
+                log($"    Song length: {entry.songLength.ToString()}");
+                log("    Dumping song.ini failed.");
+                log(e.ToString());
             }
         }
 
@@ -146,7 +152,7 @@ namespace Decryptor
             }
             catch (Exception e)
             {
-                log($"  Dumping {entry.chartName} faild.");
+                log($"    Dumping {entry.chartName} faild.");
             }
         }
         public void dumpTracks()
@@ -165,7 +171,6 @@ namespace Decryptor
                 track_streams[index] = track_stream;
             }
 
-
             for (int i = 0; i < track_streams.Length; i++)
             {
                 if (track_streams[i] != null)
@@ -175,7 +180,7 @@ namespace Decryptor
                     unsafe
                     {
                         fixed (byte* ptr = &bytes[0])
-                        ((ʿʳʶʳʾˀʺʸʹʳʽ)track_streams[i]).ʺʳˀʾʴʵʷʶʼʶʹ(ptr, bytes.Length);
+                            ((ʿʳʶʳʾˀʺʸʹʳʽ)track_streams[i]).ʺʳˀʾʴʵʷʶʼʶʹ(ptr, bytes.Length);
                     }
                     System.IO.File.WriteAllBytes($"{dump_path}/{track_names[i]}.opus", bytes);
                 }
